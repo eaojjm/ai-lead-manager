@@ -10,6 +10,8 @@ AI-система для автоматической обработки вхо�
 
 ▶️ YouTube: [Посмотреть работу AI Lead Manager](https://youtu.be/PkcLQGkhyR0)
 
+![AI Lead Manager — n8n workflow](workflow-preview2.png)
+
 ## 💼 Какую задачу решает
 
 Во многих компаниях менеджеры тратят время на первичный сбор информации:
