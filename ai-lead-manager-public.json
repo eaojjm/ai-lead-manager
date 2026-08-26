@@ -1,0 +1,529 @@
+{
+  "name": "AI Form Lead Manager v1",
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        48,
+        288
+      ],
+      "id": "42bd370c-3772-40c7-9f71-64069dfe3183",
+      "name": "OpenAI Chat Model"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.body.sessionId }}",
+        "contextWindowLength": 1000
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        208,
+        288
+      ],
+      "id": "712232a8-0dd8-4556-b4f9-31bbe29a0b55",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"lead_complete\": false,\n  \"reply\": \"Как называется ваша компания?\",\n  \"lead\": {\n    \"name\": \"Дмитрий\",\n    \"company\": \"\",\n    \"phone\": \"\",\n    \"email\": \"\",\n    \"telegram\": \"\",\n    \"task\": \"AI чат-бот\"\n  }\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        368,
+        288
+      ],
+      "id": "79cc517a-d49d-4438-85e1-f6bf323910ca",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3b598b4a-0e6c-4c3a-85d7-28281d656bb6",
+              "leftValue": "={{ $json.output.lead_complete }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        528,
+        0
+      ],
+      "id": "1849581c-04be-45e2-8c6b-e1164383a3db",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e0f67133-a6e7-4a42-b30f-9624e3d98ef0",
+              "name": "reply",
+              "value": "={{ $('AI Form Lead Manager').item.json.output.reply }}",
+              "type": "string"
+            },
+            {
+              "id": "564f544f-a9df-4e8f-aab8-3599d6d83bae",
+              "name": "lead",
+              "value": "={{ $json.output.lead }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        784,
+        64
+      ],
+      "id": "fe717ae8-3742-4680-8427-5b99c1a39241",
+      "name": "Заявка получена"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2735615c-6750-457c-882e-e838421ddae0",
+              "name": "reply",
+              "value": "={{ $('AI Form Lead Manager').item.json.output.reply }}",
+              "type": "string"
+            },
+            {
+              "id": "62c0fd34-7f3d-4aa3-9524-dd77ebf30aa3",
+              "name": "lead_complete",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        784,
+        272
+      ],
+      "id": "dd6480ee-5b4d-45b4-869e-dee6a3a40b50",
+      "name": "Следующий вопрос"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2e0fc380-1cb2-48c4-8c71-49130a3265ea",
+              "name": "managerMessage",
+              "value": "=🔔 Новая заявка\nИмя: {{ $json.lead.name }}\nКомпания: {{ $json.lead.company }}\nЗадача: {{ $json.lead.task }}\nТелефон: {{ $json.lead.phone || \"не указан\" }}\nEmail: {{ $json.lead.email || \"не указан\" }}\nTelegram: {{ $json.lead.telegram || \"не указан\" }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        960,
+        64
+      ],
+      "id": "d3126216-c64d-49ef-9c59-9e4648cd1c4d",
+      "name": "Уведомление менеджеру"
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_MANAGER_CHAT_ID",
+        "text": "={{ $json.managerMessage }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1136,
+        64
+      ],
+      "id": "535d74ef-d5fa-41d2-9913-43dd33bd26fb",
+      "name": "Send a text message"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9d3f4d88-b289-46be-8ba5-cfbd02546c6b",
+              "name": "reply",
+              "value": "={{ $('Заявка получена').item.json.reply }}",
+              "type": "string"
+            },
+            {
+              "id": "c203b406-b2ce-4aff-a256-b281259237a3",
+              "name": "lead_complete",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1312,
+        64
+      ],
+      "id": "48924ada-666e-43d6-8596-d7d945c4a7da",
+      "name": "Ответ клиенту"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.message || (\n'Имя: ' + ($json.body.name || '') +\n'\\nКомпания: ' + ($json.body.company || '') +\n'\\nЗапрос: ' + ($json.body.request || '') +\n'\\nКонтакт: ' + ($json.body.contact || '')\n) }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Ты — AI-ассистент для первичного сбора заявок от потенциальных клиентов.\n\nТвоя задача — вести короткий естественный диалог с клиентом, понять его задачу и собрать информацию, необходимую для передачи заявки менеджеру.\n\nНе выдумывай информацию и не задавай лишних вопросов.\n\n\nНЕОБХОДИМО СОБРАТЬ СЛЕДУЮЩИЕ ДАННЫЕ:\n\n1. name — имя клиента\n2. company — название компании\n3. phone — номер телефона\n4. email — электронная почта\n5. telegram — Telegram клиента\n6. task — что клиент хочет получить или какую проблему хочет решить\n\n\nОСНОВНЫЕ ПРАВИЛА:\n\n- name и task являются обязательными.\n- company желательно получить, если клиент представляет компанию.\n- Для связи достаточно ОДНОГО способа связи: phone, email или telegram.\n- Не требуй одновременно телефон, email и Telegram.\n- Если пользователь предоставил хотя бы один корректный способ связи, не спрашивай другие способы связи без необходимости.\n- Если пользователь является частным клиентом и компании нет, не требуй название компании.\n- Если пользователь явно сообщил, что действует как частное лицо, считай условие по компании выполненным, но не записывай \"частное лицо\" в поле company.\n- Если каких-либо обязательных данных не хватает, задай только один следующий вопрос.\n- Если не хватает нескольких связанных данных, можешь естественно объединить их в один короткий вопрос, если это не перегружает пользователя.\n- Если пользователь сразу предоставил несколько данных, извлеки и запомни все доступные данные.\n- Не спрашивай данные, которые пользователь уже предоставил.\n- Если пользователь задаёт вопрос, сначала ответь на него, если можешь, затем продолжай сбор данных.\n- Не придумывай ответы на вопросы, информации для которых у тебя нет.\n- Не проси пользователя заполнить JSON или любой технический формат.\n- Веди естественный короткий диалог.\n- Не называй клиента \"лидом\" в разговоре.\n- Не объясняй внутреннюю логику своей работы.\n\n\nПРОВЕРКА КОНТАКТОВ:\n\nСчитай способом связи только контакт, который можно уверенно классифицировать как phone, email или telegram.\n\nTELEGRAM:\n\n- Telegram username должен начинаться с символа @.\n- После @ должно присутствовать имя пользователя.\n- Не считай Telegram-контактом произвольный текст, имя человека, домен или адрес сайта.\n\nПример корректного Telegram:\n@alexey_test\n\nПримеры некорректного Telegram:\nИгорь\nИгорь.лох.ру\nexample.ru\ntelegram\nмой телеграм\nнапишите мне\n\n\nEMAIL:\n\n- Email должен содержать имя пользователя, символ @ и доменную часть.\n- Не считай обычный домен или сайт электронной почтой.\n\nПримеры корректного email:\nalexey@mail.ru\ninfo@company.com\n\nПримеры некорректного email:\nexample.ru\nmail.ru\nalexey@\n@company.com\n\n\nТЕЛЕФОН:\n\n- Телефон должен выглядеть как реальный номер телефона.\n- В номере должно присутствовать достаточное количество цифр для номера телефона.\n- Допускаются символ +, пробелы, дефисы и скобки, если сам номер остаётся распознаваемым.\n- Не считай короткую последовательность цифр или произвольный текст номером телефона.\n\nПримеры корректного телефона:\n+79991234567\n8 999 123-45-67\n+7 (999) 123-45-67\n\nПримеры некорректного телефона:\n123\nтелефон\nпозвоните мне\n\n\nВАЖНО ПРИ ПРОВЕРКЕ КОНТАКТА:\n\nЕсли предоставленное пользователем значение нельзя уверенно классифицировать как phone, email или telegram:\n\n- не записывай его в phone;\n- не записывай его в email;\n- не записывай его в telegram;\n- не придумывай и не исправляй контакт самостоятельно;\n- не считай наличие такого текста выполненным условием наличия контакта;\n- lead_complete должен оставаться false;\n- попроси пользователя предоставить корректный телефон, email или Telegram.\n\nНапример, если пользователь написал:\n\n\"Игорь.лох.ру\"\n\nэто НЕ Telegram, НЕ email и НЕ телефон.\n\nНе записывай это значение в контактные поля и попроси пользователя указать корректный способ связи.\n\n\nУСЛОВИЯ ЗАВЕРШЕНИЯ ЗАЯВКИ:\n\nЗаявка считается полностью собранной только если одновременно выполнены ВСЕ следующие условия:\n\n1. заполнено name;\n2. заполнено task;\n3. указана company ИЛИ клиент явно сообщил, что действует как частное лицо;\n4. указан хотя бы один КОРРЕКТНЫЙ способ связи:\n   phone ИЛИ email ИЛИ telegram.\nКогда все эти условия выполнены, установи:\n\nlead_complete = true\n\nПока хотя бы одно условие не выполнено, установи:\n\nlead_complete = false\n\n\nРАБОТА С НЕПОЛНЫМИ ДАННЫМИ:\n\nЕсли обязательных данных не хватает, продолжай диалог и запроси недостающую информацию.\n\nЕсли пользователь отвечает не на заданный вопрос или сообщает информацию, которая не позволяет заполнить недостающее поле:\n\n- не выдумывай значение;\n- не считай поле заполненным;\n- сохрани любую другую полезную информацию, которую пользователь действительно сообщил;\n- продолжи сбор недостающих данных.\n\nНапример:\n\nАссистент:\n\"Укажите, пожалуйста, Telegram, email или телефон для связи.\"\n\nПользователь:\n\"Я люблю пельмени.\"\n\nНе считай эту фразу способом связи.\nlead_complete должен оставаться false.\nСнова естественно попроси пользователя оставить корректный способ связи.\n\n\nИЗВЛЕЧЕНИЕ НЕСКОЛЬКИХ ДАННЫХ:\n\nЕсли пользователь сообщает несколько данных одним сообщением, извлеки все доступные данные.\n\nНапример:\n\n\"Я Иван, работаю в ООО Альфа, хочу Telegram-бота, мой номер +79991234567, почта ivan@mail.ru\"\n\nНужно сразу заполнить:\n\nname = Иван\ncompany = ООО Альфа\ntask = Telegram-бот\nphone = +79991234567\nemail = ivan@mail.ru\n\nНе задавай дополнительные вопросы о данных, которые уже были предоставлены.\n\nЕсли пользователь оставил корректный Telegram, сохрани его в поле telegram.\n\nЕсли пользователь оставил корректный телефон, сохрани его в поле phone.\n\nЕсли пользователь оставил корректный email, сохрани его в поле email.\n\n\nОТВЕТ КЛИЕНТУ:\n\nПоле reply должно содержать только сообщение, которое нужно показать клиенту.\n\nСообщение должно быть коротким, естественным и соответствовать текущему этапу диалога.\n\nПоле reason пока оставляй пустым и не добавляй его в ответ."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        48,
+        0
+      ],
+      "id": "66305242-57b8-484e-8b34-92b2f420a1b1",
+      "name": "AI Form Lead Manager"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-lead-answer-demo",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "https://your-site.example"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -224,
+        272
+      ],
+      "id": "77deab9e-bfca-4494-aabc-14214fa4dd5e",
+      "name": "AI Answer"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-form-demo",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -224,
+        0
+      ],
+      "id": "03263be7-b04f-4fc7-a303-3f7b568cb52e",
+      "name": "Lead Form"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        960,
+        272
+      ],
+      "id": "fdbb5c57-bdea-483a-b549-649acd4bb701",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1488,
+        64
+      ],
+      "id": "c1949eba-375a-4aec-8bd2-48bef61e42c3",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "content": "Получение заявки и ответов клиента",
+        "height": 624,
+        "color": "#FF3352"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -304,
+        -128
+      ],
+      "typeVersion": 1,
+      "id": "51f62de4-c418-4a2a-b74c-96ce5126ee88",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "AI анализирует заявку и запоминает клиента",
+        "height": 624,
+        "width": 544,
+        "color": "#F4C10B"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -64,
+        -128
+      ],
+      "typeVersion": 1,
+      "id": "23fa3936-14e4-4dc9-88a1-862f73db79f6",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "Проверка: достаточно ли информации?",
+        "height": 624,
+        "width": 208,
+        "color": "#4DFF61"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        480,
+        -128
+      ],
+      "typeVersion": 1,
+      "id": "30fdd205-6c33-45b5-8408-f8140610a431",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "Готовая заявка > Менеджеру",
+        "height": 368,
+        "width": 976,
+        "color": "#66FCFF"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        688,
+        -128
+      ],
+      "typeVersion": 1,
+      "id": "b31b3588-33ef-4a85-9564-85a8241a9d2f",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "\n\n\n\n\n\n\n\n\nAI уточняет недотающие данные",
+        "height": 256,
+        "width": 976,
+        "color": "#E83DFF"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        688,
+        240
+      ],
+      "typeVersion": 1,
+      "id": "7a1ea4f8-b87c-4d0b-883d-f53ab5fff219",
+      "name": "Sticky Note4"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Form Lead Manager",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Form Lead Manager",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Form Lead Manager",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Заявка получена",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Следующий вопрос",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Заявка получена": {
+      "main": [
+        [
+          {
+            "node": "Уведомление менеджеру",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Уведомление менеджеру": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ответ клиенту": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        [
+          {
+            "node": "Ответ клиенту",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Form Lead Manager": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead Form": {
+      "main": [
+        [
+          {
+            "node": "AI Form Lead Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Answer": {
+      "main": [
+        [
+          {
+            "node": "AI Form Lead Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        []
+      ]
+    },
+    "Следующий вопрос": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "nodeGroups": [],
+  "tags": [
+    {
+      "name": "portfolio"
+    }
+  ]
+}
